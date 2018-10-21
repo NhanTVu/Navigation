@@ -19,7 +19,8 @@ gcc doesn't link math.h so you need to compile like this:
 #define MAX_OBSTACLES   	25		//maximum number of obstacles
 #define GridWidth 			16		//size of the grid x
 #define GridLength 			10		//size of the grid y
-#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-75	//how many intersections there are	
+#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-95	//how many intersections there are	
+#define INFINITI 			2147483647	// highest int value
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -59,6 +60,9 @@ double obstacleRange[MAX_OBSTACLES][2][2];
 //these corners are a part of the grid decompoistion we don's want to pass
 double obstaclePerimeter[INTERSECTIONS][2];
 
+//array tracks the Manhattan distance of all points
+double ManhattanDistArray[GridWidth+1][GridLength+1];
+
 //---------------------------------------------------------------------------------------------------------
 
 //Printing functions
@@ -88,6 +92,20 @@ void print3DArray(double input[][2][2], int size){
 										input[i][1][0], input[i][1][1]);
 	}
 	putchar('\n');
+}
+
+void printManhattanArray(){
+	int x, y;
+	printf("Manhattan distance: \n");
+	for(y = 0; y <= GridLength; y++){
+		///*
+		//debugger print
+		printf("row %d: \n", y);
+		//*/
+		for(x = 0; x <= GridWidth; x++){
+			printf("%f\n", ManhattanDistArray[x][y]);
+		}
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------
@@ -347,6 +365,46 @@ void GridDecomposition(){
 	*/
 }
 
+double ManhattanDist (double position[2]){
+	
+	int i;
+	double x_dist, y_dist, temp, man_dist = INFINITI;
+
+	//for each obstacle perimeter point
+	for(i = 0; i < INTERSECTIONS; i++){
+		//get x distance (absolute value)
+		x_dist = fabs(obstaclePerimeter[i][0] - position[0]);
+		//get y distance (absolute value)
+		y_dist = fabs(obstaclePerimeter[i][1] - position[1]);
+		//sum of x and y distance
+		temp = x_dist + y_dist;
+		//check to see if this obstacle is the closet manhattan dist
+		if(temp < man_dist){
+			man_dist = temp;
+		}
+	}
+
+	return man_dist;
+
+	/*
+	//debugger print
+	printf("Manhattan distance: ");
+	printf("%f\n", man_dist);
+	*/
+}
+
+void populateManhattanArray (){
+	int x, y;
+	double temp[2];
+	for(x = 0; x <= GridWidth; x++){
+		for(y = 0; y <= GridLength; y++){
+			temp[0] = x;
+			temp[1] = y;
+			ManhattanDistArray[x][y] = ManhattanDist(temp);
+		}
+	}
+}
+
 
 // Main
 //---------------------------------------------------------------------------------------------------------
@@ -356,6 +414,7 @@ int main(void){
 	int i;
 
 	GridDecomposition();
+	populateManhattanArray();
 	//convertToMeter();
 
 	printf("obstacle center location: \n");
@@ -366,6 +425,8 @@ int main(void){
 
 	printf("obstacle perimeter: \n");
 	printCoordinateArray(obstaclePerimeter, INTERSECTIONS);
+
+	printManhattanArray();
 
 	//convertToMeter();
 	printf("program ran successfully \n");
