@@ -15,12 +15,19 @@ gcc doesn't link math.h so you need to compile like this:
 //Macro
 //---------------------------------------------------------------------------------------------------------
 
-#define METER_CONVERSION 	0.3048
-#define MAX_OBSTACLES   	25		//maximum number of obstacles
-#define GridWidth 			16		//size of the grid x
-#define GridLength 			10		//size of the grid y
-#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-95	//how many intersections there are	
-#define INFINITI 			2147483647	// highest int value
+#define SCALE				2 				// scale the Manhattan grid, bigger number means more grid points 
+											//SCALE = 1 means grid is 1 ft by 1 ft
+											//SCALE = 2 means grid is 1/2 ft 1/2ft
+#define METER_CONVERSION 	0.3048/SCALE
+#define MAX_OBSTACLES   	25				//maximum number of obstacles
+#define GridWidth 			16*SCALE		//size of the grid x
+#define GridLength 			10*SCALE		//size of the grid y
+#define INFINITI 			2147483647		// highest int value
+
+//how many intersections there are
+#define INTERSECTIONS 		((GridWidth+2)*(GridLength+2))		
+
+
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -96,11 +103,14 @@ void print3DArray(double input[][2][2], int size){
 
 void printManhattanArray(){
 	int x, y;
+	double row;
+
 	printf("Manhattan distance: \n");
 	for(y = 0; y <= GridLength; y++){
 		///*
 		//debugger print
-		printf("row %d: \n", y);
+		row = y;
+		printf("row %f: \n", row/SCALE);
 		//*/
 		for(x = 0; x <= GridWidth; x++){
 			printf("%f\n", ManhattanDistArray[x][y]);
@@ -202,8 +212,8 @@ double* pathfinder(double position[2], int* path, int directions[4] ){
 // make no-pass borders and put the coordinates in obstaclePerimeter
 void GridDecomposition(){
 
-	int i, i2, n = 0;
-
+	int i, n = 0;
+	double temp, i2;
 	//calculate the "walls" that cannot be touched
 	//1st [] is for each obstacle
 	//2nd [] is for x (range)
@@ -229,38 +239,46 @@ void GridDecomposition(){
 		// ^ note that the rounding is to push perimeter to the nearest tile
 	}
 
+	///*
+	//debugger print
+	printf("obstacle range: \n");
+	print3DArray(obstacleRange, num_obstacles);
+	//*/
+
+	//the next 4 for loops makes the border of the map
+	//note that temp is needed to cast i to a double
+
 	//add the lower width of the entire graph
-	for (i = 0; i <= GridWidth; i++){
-		obstaclePerimeter[n][0] = i;		//x coordinate
+	for (i2 = 0; i2 <= GridWidth; i2++){
+		obstaclePerimeter[n][0] = i2/SCALE;	//x coordinate
 		obstaclePerimeter[n][1] = 0;		//y coordinate
 		n++;	//go to next coordinate slot
 	}
 
 	//add the upper width of the entire graph
-	for (i = 0; i <= GridWidth; i++){
-		obstaclePerimeter[n][0] = i;			//x coordinate
-		obstaclePerimeter[n][1] = GridLength;	//y coordinate
+	for (i2 = 0; i2 <= GridWidth; i2++){
+		obstaclePerimeter[n][0] = i2/SCALE;			//x coordinate
+		obstaclePerimeter[n][1] = GridLength/SCALE;	//y coordinate
 		n++;	//go to next coordinate slot	
 	}
 
 	//add the left length of the entire graph
 	//width already added the corners
 	// i = 1 and i < GridLength to not add corner twice
-	for (i = 1; i < GridLength; i++){
+	for (i2 = 1; i2 < GridLength; i2++){
 		obstaclePerimeter[n][0] = 0;		//x coordinate
-		obstaclePerimeter[n][1] = i;		//y coordinate
+		obstaclePerimeter[n][1] = i2/SCALE;	//y coordinate
 		n++;	//go to next coordinate slot
 	}
 
 	//add the right length of the entire graph
 	//width already added the corners
 	// i = 1 and i < GridLength to not add corner twice
-	for (i = 1; i < GridLength; i++){
-		obstaclePerimeter[n][0] = GridWidth;			//x coordinate
-		obstaclePerimeter[n][1] = i;	//y coordinate
+	for (i2 = 1; i2 < GridLength; i2++){
+		obstaclePerimeter[n][0] = GridWidth/SCALE;	//x coordinate
+		obstaclePerimeter[n][1] = i2/SCALE;			//y coordinate
 		n++;	//go to next coordinate slot	
 	}
-
 
 	/*
 	//debugger print, use it to separate each for loop
@@ -269,12 +287,18 @@ void GridDecomposition(){
 	n++;	//go to next coordinate slot	
 	*/
 
+	/*~
+	//Debugger print
+	printf("obstacle perimeter: \n");
+	printCoordinateArray(obstaclePerimeter, INTERSECTIONS);
+	//*/
+
 	//actually making the perimter/ tile intersections robot can't go near
 	//for each obstacle
 	for (i = 0; i < num_obstacles; i++){
 		
 		//add lower width of the rectangle going left to right
-		for (i2 = 0; i2 <= (obstacleRange[i][0][1] - obstacleRange[i][0][0]); i2++){
+		for (i2 = 0; i2 <= (obstacleRange[i][0][1] - obstacleRange[i][0][0]); i2+=(1.0/SCALE)){
 			if(	obstacleRange[i][0][0]+i2 != 0 &&  
 				obstacleRange[i][0][0]+i2 != GridWidth && 
 				obstacleRange[i][1][0] != 0 &&  
@@ -296,18 +320,18 @@ void GridDecomposition(){
 
 		//add rightmost length of the rectangle going bottom up
 		//i2 is now 1 to skip the lower right corner that was already added
-		for (i2 = 1; i2 <= (obstacleRange[i][1][1] - obstacleRange[i][1][0]); i2++){
+		for (i2 = 1; i2 <= (obstacleRange[i][1][1] - obstacleRange[i][1][0]); i2+=(1.0/SCALE)){
 			if(	obstacleRange[i][0][1] != 0 &&  
 				obstacleRange[i][0][1] != GridWidth && 
 				obstacleRange[i][1][0]+i2 != 0 &&  
 				obstacleRange[i][1][0]+i2 != GridLength	){
 
 					obstaclePerimeter[n][0] = obstacleRange[i][0][1];		//x coordinate
-					obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;		//y coordinate
+					obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;	//y coordinate
 					n++;	//go to next coordinate slot
 			}
 		}
-		
+
 		/*
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = -10;	//x coordinate
@@ -317,7 +341,7 @@ void GridDecomposition(){
 
 		//add upper width of the rectangle going right to left
 		//i2 has a -1 to not add the upper right corner again
-		for (i2 = (obstacleRange[i][0][1] - obstacleRange[i][0][0])-1; i2 >= 0; i2--){
+		for (i2 = (obstacleRange[i][0][1] - obstacleRange[i][0][0])-1; i2 >= 0; i2-=(1.0/SCALE)){
 			if(	obstacleRange[i][0][0]+i2 != 0 &&  
 				obstacleRange[i][0][0]+i2 != GridWidth && 
 				obstacleRange[i][1][1] != 0 &&  
@@ -338,7 +362,7 @@ void GridDecomposition(){
 		//add leftmost length of the rectangle going top down
 		//i2 has a -1 to not add the upper left corner again
 		//i2 is compared with > and not >= to not add lower left corner again
-		for (i2 = (obstacleRange[i][1][1] - obstacleRange[i][1][0])-1; i2 > 0; i2--){
+		for (i2 = (obstacleRange[i][1][1] - obstacleRange[i][1][0])-1; i2 > 0; i2-=(1.0/SCALE)){
 			if(	obstacleRange[i][0][0] != 0 &&  
 				obstacleRange[i][0][0] != GridWidth && 
 				obstacleRange[i][1][0]+i2 != 0 &&  
@@ -348,7 +372,7 @@ void GridDecomposition(){
 					n++;	//go to next coordinate slot
 			}
 		}
-
+		
 		/*
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = -10;	//x coordinate
@@ -362,7 +386,14 @@ void GridDecomposition(){
 	obstaclePerimeter[n][0] = -111;	//x coordinate
 	obstaclePerimeter[n][1] = -111;		//y coordinate
 	n++;	//go to next coordinate slot	
-	*/
+	//*/
+
+	///*~
+	//Debugger print
+	printf("obstacle perimeter: \n");
+	printCoordinateArray(obstaclePerimeter, INTERSECTIONS);
+	//*/
+
 }
 
 double ManhattanDist (double position[2]){
@@ -373,17 +404,23 @@ double ManhattanDist (double position[2]){
 	//for each obstacle perimeter point
 	for(i = 0; i < INTERSECTIONS; i++){
 		//get x distance (absolute value)
-		x_dist = fabs(obstaclePerimeter[i][0] - position[0]);
+		x_dist = fabs(obstaclePerimeter[i][0] - (position[0])/SCALE );
 		//get y distance (absolute value)
-		y_dist = fabs(obstaclePerimeter[i][1] - position[1]);
+		y_dist = fabs(obstaclePerimeter[i][1] - (position[1])/SCALE );
 		//sum of x and y distance
-		temp = x_dist + y_dist;
+		temp = (x_dist + y_dist);
+		//debugger print
+		//printf("temp: %f\n", temp);
+
 		//check to see if this obstacle is the closet manhattan dist
 		if(temp < man_dist){
 			man_dist = temp;
+			//debugger print
+			//printf("x_dist: %f\n", x_dist);
+			//printf("y_dist: %f\n", y_dist);			
 		}
 	}
-
+	
 	return man_dist;
 
 	/*
@@ -413,18 +450,12 @@ int main(void){
 
 	int i;
 
-	GridDecomposition();
-	populateManhattanArray();
-	//convertToMeter();
-
 	printf("obstacle center location: \n");
 	printCoordinateArray(obstacleLocation, num_obstacles);
 
-	printf("obstacle range: \n");
-	print3DArray(obstacleRange, num_obstacles);
-
-	printf("obstacle perimeter: \n");
-	printCoordinateArray(obstaclePerimeter, INTERSECTIONS);
+	GridDecomposition();
+	populateManhattanArray();
+	//convertToMeter();
 
 	printManhattanArray();
 
