@@ -19,7 +19,7 @@ gcc doesn't link math.h so you need to compile like this:
 #define MAX_OBSTACLES   	25		//maximum number of obstacles
 #define GridWidth 			16		//size of the grid x
 #define GridLength 			10		//size of the grid y
-#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-120	//how many intersections there are	
+#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-75	//how many intersections there are	
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -211,75 +211,140 @@ void GridDecomposition(){
 		// ^ note that the rounding is to push perimeter to the nearest tile
 	}
 
+	//add the lower width of the entire graph
+	for (i = 0; i <= GridWidth; i++){
+		obstaclePerimeter[n][0] = i;		//x coordinate
+		obstaclePerimeter[n][1] = 0;		//y coordinate
+		n++;	//go to next coordinate slot
+	}
+
+	//add the upper width of the entire graph
+	for (i = 0; i <= GridWidth; i++){
+		obstaclePerimeter[n][0] = i;			//x coordinate
+		obstaclePerimeter[n][1] = GridLength;	//y coordinate
+		n++;	//go to next coordinate slot	
+	}
+
+	//add the left length of the entire graph
+	//width already added the corners
+	// i = 1 and i < GridLength to not add corner twice
+	for (i = 1; i < GridLength; i++){
+		obstaclePerimeter[n][0] = 0;		//x coordinate
+		obstaclePerimeter[n][1] = i;		//y coordinate
+		n++;	//go to next coordinate slot
+	}
+
+	//add the right length of the entire graph
+	//width already added the corners
+	// i = 1 and i < GridLength to not add corner twice
+	for (i = 1; i < GridLength; i++){
+		obstaclePerimeter[n][0] = GridWidth;			//x coordinate
+		obstaclePerimeter[n][1] = i;	//y coordinate
+		n++;	//go to next coordinate slot	
+	}
+
+
+	/*
+	//debugger print, use it to separate each for loop
+	obstaclePerimeter[n][0] = -111;		//x coordinate
+	obstaclePerimeter[n][1] = -111;		//y coordinate
+	n++;	//go to next coordinate slot	
+	*/
+
 	//actually making the perimter/ tile intersections robot can't go near
 	//for each obstacle
 	for (i = 0; i < num_obstacles; i++){
 		
 		//add lower width of the rectangle going left to right
 		for (i2 = 0; i2 <= (obstacleRange[i][0][1] - obstacleRange[i][0][0]); i2++){
-			obstaclePerimeter[n][0] = obstacleRange[i][0][0]+i2;	//x coordinate
-			obstaclePerimeter[n][1] = obstacleRange[i][1][0];		//y coordinate
-			n++;	//go to next coordinate slot			
+			if(	obstacleRange[i][0][0]+i2 != 0 &&  
+				obstacleRange[i][0][0]+i2 != GridWidth && 
+				obstacleRange[i][1][0] != 0 &&  
+				obstacleRange[i][1][0] != GridLength	){
+
+					obstaclePerimeter[n][0] = obstacleRange[i][0][0]+i2;	//x coordinate
+					obstaclePerimeter[n][1] = obstacleRange[i][1][0];		//y coordinate
+					n++;	//go to next coordinate slot	
+			}
+		
 		}
 
-		
+		/*
 		//debugger print, use it to separate each for loop
-		obstaclePerimeter[n][0] = 3.141;	//x coordinate
-		obstaclePerimeter[n][1] = 3.141;		//y coordinate
+		obstaclePerimeter[n][0] = -10;	//x coordinate
+		obstaclePerimeter[n][1] = -10;	//y coordinate
 		n++;	//go to next coordinate slot	
-		
+		*/
 
 		//add rightmost length of the rectangle going bottom up
 		//i2 is now 1 to skip the lower right corner that was already added
 		for (i2 = 1; i2 <= (obstacleRange[i][1][1] - obstacleRange[i][1][0]); i2++){
-			obstaclePerimeter[n][0] = obstacleRange[i][0][1];		//x coordinate
-			obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;		//y coordinate
-			n++;	//go to next coordinate slot
+			if(	obstacleRange[i][0][1] != 0 &&  
+				obstacleRange[i][0][1] != GridWidth && 
+				obstacleRange[i][1][0]+i2 != 0 &&  
+				obstacleRange[i][1][0]+i2 != GridLength	){
+
+					obstaclePerimeter[n][0] = obstacleRange[i][0][1];		//x coordinate
+					obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;		//y coordinate
+					n++;	//go to next coordinate slot
+			}
 		}
 		
-		
+		/*
 		//debugger print, use it to separate each for loop
-		obstaclePerimeter[n][0] = 3.141;	//x coordinate
-		obstaclePerimeter[n][1] = 3.141;		//y coordinate
+		obstaclePerimeter[n][0] = -10;	//x coordinate
+		obstaclePerimeter[n][1] = -10;	//y coordinate
 		n++;	//go to next coordinate slot	
-		
+		*/
 
 		//add upper width of the rectangle going right to left
 		//i2 has a -1 to not add the upper right corner again
 		for (i2 = (obstacleRange[i][0][1] - obstacleRange[i][0][0])-1; i2 >= 0; i2--){
-			obstaclePerimeter[n][0] = obstacleRange[i][0][0]+i2;	//x coordinate
-			obstaclePerimeter[n][1] = obstacleRange[i][1][1];		//y coordinate
-			n++;	//go to next coordinate slot
+			if(	obstacleRange[i][0][0]+i2 != 0 &&  
+				obstacleRange[i][0][0]+i2 != GridWidth && 
+				obstacleRange[i][1][1] != 0 &&  
+				obstacleRange[i][1][1] != GridLength	){
+					obstaclePerimeter[n][0] = obstacleRange[i][0][0]+i2;	//x coordinate
+					obstaclePerimeter[n][1] = obstacleRange[i][1][1];		//y coordinate
+					n++;	//go to next coordinate slot
+				}
 		}
 		
-		
+		/*
 		//debugger print, use it to separate each for loop
-		obstaclePerimeter[n][0] = 3.141;	//x coordinate
-		obstaclePerimeter[n][1] = 3.141;		//y coordinate
+		obstaclePerimeter[n][0] = -10;	//x coordinate
+		obstaclePerimeter[n][1] = -10;	//y coordinate
 		n++;	//go to next coordinate slot	
-		
+		*/
 
 		//add leftmost length of the rectangle going top down
 		//i2 has a -1 to not add the upper left corner again
 		//i2 is compared with > and not >= to not add lower left corner again
 		for (i2 = (obstacleRange[i][1][1] - obstacleRange[i][1][0])-1; i2 > 0; i2--){
-			obstaclePerimeter[n][0] = obstacleRange[i][0][0];		//x coordinate
-			obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;		//y coordinate
-			n++;	//go to next coordinate slot
+			if(	obstacleRange[i][0][0] != 0 &&  
+				obstacleRange[i][0][0] != GridWidth && 
+				obstacleRange[i][1][0]+i2 != 0 &&  
+				obstacleRange[i][1][0]+i2 != GridLength	){
+					obstaclePerimeter[n][0] = obstacleRange[i][0][0];		//x coordinate
+					obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;	//y coordinate
+					n++;	//go to next coordinate slot
+			}
 		}
 
-		
+		/*
 		//debugger print, use it to separate each for loop
-		obstaclePerimeter[n][0] = 3.141;	//x coordinate
-		obstaclePerimeter[n][1] = 3.141;		//y coordinate
+		obstaclePerimeter[n][0] = -10;	//x coordinate
+		obstaclePerimeter[n][1] = -10;	//y coordinate
 		n++;	//go to next coordinate slot	
-		
+		*/
 	}
 
-	//for(){
-
-	//}
-
+	/*
+	//debugger print, use it to separate each for loop
+	obstaclePerimeter[n][0] = -111;	//x coordinate
+	obstaclePerimeter[n][1] = -111;		//y coordinate
+	n++;	//go to next coordinate slot	
+	*/
 }
 
 
