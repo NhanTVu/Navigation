@@ -19,7 +19,7 @@ gcc doesn't link math.h so you need to compile like this:
 #define MAX_OBSTACLES   	25		//maximum number of obstacles
 #define GridWidth 			16		//size of the grid x
 #define GridLength 			10		//size of the grid y
-#define INTERSECTIONS 	(GridWidth+1)*(GridLength+1)-120	//how many intersections there are	
+#define INTERSECTIONS 		(GridWidth+1)*(GridLength+1)-120	//how many intersections there are	
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ double goal[2] = {12, 6};			//goal location
 //units are 0.305m per unit 
 double obstacleLocation[MAX_OBSTACLES][2] = 	
 {
-	{  3,  9},{ 10,  9},{ 6, 5.5},{  8,  2},{-10,-10},
+	{  3,  9},{ 10,  9},{ 6, 5.5},{  9,  2},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
@@ -101,18 +101,37 @@ void convertToMeter(){
 	
 	int i;
 	
+	//convert obstacle center coordinate to meters
 	for (i = 0; i < MAX_OBSTACLES; i++){
 		obstacleLocation[i][0] *= METER_CONVERSION; 
 		obstacleLocation[i][1] *= METER_CONVERSION; 
 	}
 
+	//convert obstacle length and width coordinates to meters
 	for (i = 0; i < MAX_OBSTACLES; i++){
 		obstacleDimension[i][0] *= METER_CONVERSION; 
 		obstacleDimension[i][1] *= METER_CONVERSION; 
 	}
 
+	//convert obstacle min and max x and y to meters
+	for (i = 0; i < MAX_OBSTACLES; i++){
+		obstacleRange[i][0][0] *= METER_CONVERSION;
+		obstacleRange[i][0][1] *= METER_CONVERSION; 
+		obstacleRange[i][1][0] *= METER_CONVERSION;
+		obstacleRange[i][1][1] *= METER_CONVERSION; 
+	}
+
+	//convert obstacle center coordinate to meters
+	for (i = 0; i < INTERSECTIONS; i++){
+		obstaclePerimeter[i][0] *= METER_CONVERSION; 
+		obstaclePerimeter[i][1] *= METER_CONVERSION; 
+	}
+
+	//convert starting coordinate to meters
 	start[0] *= METER_CONVERSION;
 	start[1] *= METER_CONVERSION;
+
+	//convert goal coordinate to meters
 	goal[0] *= METER_CONVERSION;
 	goal[1] *= METER_CONVERSION;
 
@@ -203,12 +222,12 @@ void GridDecomposition(){
 			n++;	//go to next coordinate slot			
 		}
 
-		/*
+		
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = 3.141;	//x coordinate
 		obstaclePerimeter[n][1] = 3.141;		//y coordinate
 		n++;	//go to next coordinate slot	
-		*/
+		
 
 		//add rightmost length of the rectangle going bottom up
 		//i2 is now 1 to skip the lower right corner that was already added
@@ -218,12 +237,12 @@ void GridDecomposition(){
 			n++;	//go to next coordinate slot
 		}
 		
-		/*
+		
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = 3.141;	//x coordinate
 		obstaclePerimeter[n][1] = 3.141;		//y coordinate
 		n++;	//go to next coordinate slot	
-		*/
+		
 
 		//add upper width of the rectangle going right to left
 		//i2 has a -1 to not add the upper right corner again
@@ -233,12 +252,12 @@ void GridDecomposition(){
 			n++;	//go to next coordinate slot
 		}
 		
-		/*
+		
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = 3.141;	//x coordinate
 		obstaclePerimeter[n][1] = 3.141;		//y coordinate
 		n++;	//go to next coordinate slot	
-		*/
+		
 
 		//add leftmost length of the rectangle going top down
 		//i2 has a -1 to not add the upper left corner again
@@ -248,12 +267,13 @@ void GridDecomposition(){
 			obstaclePerimeter[n][1] = obstacleRange[i][1][0]+i2;		//y coordinate
 			n++;	//go to next coordinate slot
 		}
-		/*
+
+		
 		//debugger print, use it to separate each for loop
 		obstaclePerimeter[n][0] = 3.141;	//x coordinate
 		obstaclePerimeter[n][1] = 3.141;		//y coordinate
 		n++;	//go to next coordinate slot	
-		*/
+		
 	}
 
 	//for(){
@@ -270,11 +290,11 @@ int main(void){
 
 	int i;
 
+	GridDecomposition();
+	//convertToMeter();
 
 	printf("obstacle center location: \n");
 	printCoordinateArray(obstacleLocation, num_obstacles);
-	
-	GridDecomposition();
 
 	printf("obstacle range: \n");
 	print3DArray(obstacleRange, num_obstacles);
