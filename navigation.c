@@ -15,9 +15,10 @@ gcc doesn't link math.h so you need to compile like this:
 //Macro
 //---------------------------------------------------------------------------------------------------------
 
-#define SCALE				2 				// scale the Manhattan grid, bigger number means more grid points 
+#define SCALE				1 				// scale the Manhattan grid, bigger number means more grid points 
 											//SCALE = 1 means grid is 1 ft by 1 ft
 											//SCALE = 2 means grid is 1/2 ft 1/2ft
+											//leave SCALE as =1 for project 1
 #define METER_CONVERSION 	0.3048/SCALE
 #define MAX_OBSTACLES   	25				//maximum number of obstacles
 #define GridWidth 			16*SCALE		//size of the grid x
@@ -34,9 +35,9 @@ gcc doesn't link math.h so you need to compile like this:
 //Global
 //---------------------------------------------------------------------------------------------------------
 
-int num_obstacles = 4;				//number of obstacles
-double start[2] = {1, 4};			//start location
-double goal[2] = {12, 6};			//goal location
+int num_obstacles = 4;					//number of obstacles
+double start[2] = {1*SCALE, 4*SCALE};	//start location
+double goal[2] = {12*SCALE, 6*SCALE};	//goal location
 
 //obstacle locations (their center at x then y coordinate)
 //units are 0.305m per unit 
@@ -67,8 +68,15 @@ double obstacleRange[MAX_OBSTACLES][2][2];
 //these corners are a part of the grid decompoistion we don's want to pass
 double obstaclePerimeter[INTERSECTIONS][2];
 
-//array tracks the Manhattan distance of all points
+//array tracks the Manhattan distance to closest obstacle of all points
+double obstacleDistArray[GridWidth+1][GridLength+1];
+
+//array tracks the Manhattan distance to goal of all points
 double ManhattanDistArray[GridWidth+1][GridLength+1];
+
+//track movement till goal
+int pathway[100];
+int pathwayIndex = 1;
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -101,7 +109,24 @@ void print3DArray(double input[][2][2], int size){
 	putchar('\n');
 }
 
-void printManhattanArray(){
+void printObstacleDist(){
+	int x, y;
+	double row;
+
+	printf("Manhattan distance to nearest obstacle: \n");
+	for(y = 0; y <= GridLength; y++){
+		///*
+		//debugger print
+		row = y;
+		printf("row %f: \n", row/SCALE);
+		//*/
+		for(x = 0; x <= GridWidth; x++){
+			printf("%f\n", obstacleDistArray[x][y]);
+		}
+	}
+}
+
+void printManhattanDistArray(){
 	int x, y;
 	double row;
 
@@ -115,6 +140,24 @@ void printManhattanArray(){
 		for(x = 0; x <= GridWidth; x++){
 			printf("%f\n", ManhattanDistArray[x][y]);
 		}
+	}
+}
+
+void printPathway(){
+	int i = 0;
+	printf("\nPath taken: \n");
+	while(pathway[i] != -1){
+		switch(pathway[i]){
+			case 1:	printf("^ \n");
+					break;
+			case 2:	printf("-> \n");
+					break;
+			case 3:	printf("v \n");
+					break;
+			case 4:	printf("<- \n");
+					break;
+		}
+		i++;
 	}
 }
 
@@ -170,7 +213,8 @@ void convertToMeter(){
 	//printf("%f \n", obstacleDimension[1][1]);
 }
 
-double* pathfinder(double position[2], int* path, int directions[4] ){
+/*
+double* pathfinder(double position[2], int path[], int directions[8] ){
 
 	//while not at goal
 	while(position[0] != goal[0] || position[1] != goal[1]){
@@ -208,9 +252,10 @@ double* pathfinder(double position[2], int* path, int directions[4] ){
 	}
 
 }
+*/
 
 // make no-pass borders and put the coordinates in obstaclePerimeter
-void GridDecomposition(){
+void GridBorder(){
 
 	int i, n = 0;
 	double temp, i2;
@@ -222,19 +267,19 @@ void GridDecomposition(){
 		//leftmost x of the obstacle's points
 		//center x coordinate - 1/2 of width of obstacle
 		//rounded to the furthest left whole coordinate
-		obstacleRange[i][0][0] = floor(obstacleLocation[i][0] - (obstacleDimension[i][0]/2));
+		obstacleRange[i][0][0] = ceil(obstacleLocation[i][0] - (obstacleDimension[i][0]/2));
 		//rightmost x of the obstacle's points
 		//center x coordinate + 1/2 of width of obstacle
 		//rounded to the further right whole coordinate
-		obstacleRange[i][0][1] = ceil(obstacleLocation[i][0] + (obstacleDimension[i][0]/2));
+		obstacleRange[i][0][1] = floor(obstacleLocation[i][0] + (obstacleDimension[i][0]/2));
 		//lowest y of the obstacle's points
 		//center y coordinate - 1/2 of length of obstacle
 		//rounded to the lowest whole coordinate
-		obstacleRange[i][1][0] = floor(obstacleLocation[i][1] - (obstacleDimension[i][1]/2));
+		obstacleRange[i][1][0] = ceil(obstacleLocation[i][1] - (obstacleDimension[i][1]/2));
 		//highest y of the obstacle's points
 		//center y coordinate + 1/2 of length of obstacle
 		//rounded to ther highest whole coordinate
-		obstacleRange[i][1][1] = ceil(obstacleLocation[i][1] + (obstacleDimension[i][1]/2));
+		obstacleRange[i][1][1] = floor(obstacleLocation[i][1] + (obstacleDimension[i][1]/2));
 
 		// ^ note that the rounding is to push perimeter to the nearest tile
 	}
@@ -401,6 +446,55 @@ double ManhattanDist (double position[2]){
 	int i;
 	double x_dist, y_dist, temp, man_dist = INFINITI;
 
+	for (int i = 0; i < INTERSECTIONS; i++)
+	{
+		//perimeter of obstacles are set to be high as to never move onto them
+		if(	obstaclePerimeter[i][0] == position[0] &&
+			obstaclePerimeter[i][1] == position[1] ){
+			return INFINITI;
+		}
+	}
+
+
+	//get x distance (absolute value)
+	x_dist = fabs(goal[0] - (position[0])/SCALE );
+	//get y distance (absolute value)
+	y_dist = fabs(goal[1] - (position[1])/SCALE );
+	//debugger print
+	//printf("temp: %f\n", temp);
+
+	//sum of x and y distance
+	return (x_dist + y_dist);
+	
+	/*
+	//debugger print
+	printf("Manhattan distance: ");
+	printf("%f\n", man_dist);
+	*/
+}
+
+void populateManhattanDist(){
+	int x, y;
+	double temp[2];
+	for(x = 0; x <= GridWidth; x++){
+		for(y = 0; y <= GridLength; y++){
+			temp[0] = x;
+			temp[1] = y;
+			ManhattanDistArray[x][y] = ManhattanDist(temp);
+		}
+	}
+}
+
+/*
+
+//finds manhattan distance between a point and the nearest obstacle
+//can be used as a 2nd move deciding factor
+
+double obstacleDist (double position[2]){
+	
+	int i;
+	double x_dist, y_dist, temp, man_dist = INFINITI;
+
 	//for each obstacle perimeter point
 	for(i = 0; i < INTERSECTIONS; i++){
 		//get x distance (absolute value)
@@ -423,24 +517,144 @@ double ManhattanDist (double position[2]){
 	
 	return man_dist;
 
-	/*
+	
 	//debugger print
-	printf("Manhattan distance: ");
-	printf("%f\n", man_dist);
-	*/
+	//printf("Manhattan distance: ");
+	//printf("%f\n", man_dist);
+	
 }
 
-void populateManhattanArray (){
+void populateObstacleDist (){
 	int x, y;
 	double temp[2];
 	for(x = 0; x <= GridWidth; x++){
 		for(y = 0; y <= GridLength; y++){
 			temp[0] = x;
 			temp[1] = y;
-			ManhattanDistArray[x][y] = ManhattanDist(temp);
+			obstacleDistArray[x][y] = obstacleDist(temp);
 		}
 	}
 }
+
+*/
+
+//decide where to go next
+//1 is up, 2 right, 3 down, 4 left
+int move(double position[2]){
+	int 	result,
+			x = position[0],
+			y = position[1];
+	double 	temp = INFINITI;
+
+	//compare manhattan distance
+
+	//if up is not out of bound
+	if(y < GridLength){
+		if(	ManhattanDistArray[x][y+1] < temp && 
+			pathway[pathwayIndex-1] != 3){
+			temp = ManhattanDistArray[x][y+1];
+			result = 1;
+		}	
+	}
+
+	/*~
+	//Debugger print
+	printf("Up: %f\n", ManhattanDistArray[x][y+1]);
+	//*/
+
+	//if down is not out of bound
+	if(y > 0){
+		if(ManhattanDistArray[x][y-1] < temp && 
+			pathway[pathwayIndex-1] != 1){
+			temp = ManhattanDistArray[x][y-1];
+			result = 3;
+		}
+	}
+
+	/*~
+	//Debugger print
+	printf("down: %f\n", ManhattanDistArray[x][y-1]);
+	//*/
+
+	//if right is not out of bound
+	if(x < GridWidth){
+		if(ManhattanDistArray[x+1][y] < temp && 
+			pathway[pathwayIndex-1] != 4){
+			temp = ManhattanDistArray[x+1][y];
+			result = 2;
+		}
+	}
+
+	/*~
+	//Debugger print
+	printf("right: %f\n", ManhattanDistArray[x+1][y]);
+	//*/
+
+	//if left is not out of bound
+	if(x > 0){
+		if(ManhattanDistArray[x-1][y] < temp && 
+			pathway[pathwayIndex-1] != 2){
+			temp = ManhattanDistArray[x-1][y];
+			result = 4;
+		}
+	}
+
+	/*~
+	//Debugger print
+	printf("left: %f\n", ManhattanDistArray[x-1][y]);
+	//*/
+
+	//after moving, make sure to not move back
+	ManhattanDistArray[x][y] = INFINITI;
+
+	return result;
+
+}
+
+void findRoute(double position[2]){
+	int 	result,
+			x = position[0],
+			y = position[1];
+	double temp[2];
+	//success condition
+	//goal found
+	if(x == goal[0] && y == goal[1]){
+		pathway[pathwayIndex] = -1;
+		
+		//debugger print
+		//printPathway();
+		
+		return;
+	}
+
+	pathway[pathwayIndex] = move(position);
+
+	//printf("move: %d\n", pathway[pathwayIndex]);
+
+	switch(move(position)){
+		case 1:	temp[0] = x;
+				temp[1] = y+1.0;
+				pathwayIndex++;
+				findRoute(temp);
+				break;
+		case 2:	temp[0] = x+1.0;
+				temp[1] = y;
+				pathwayIndex++;
+				findRoute(temp);
+				break;
+		case 3:	temp[0] = x;
+				temp[1] = y-1.0;
+				pathwayIndex++;
+				findRoute(temp);
+				break;
+		case 4:	temp[0] = x-1.0;
+				temp[1] = y;
+				pathwayIndex++;
+				findRoute(temp);
+				break;
+	}
+}
+
 
 
 // Main
@@ -450,14 +664,18 @@ int main(void){
 
 	int i;
 
+	//convertToMeter();
+
 	printf("obstacle center location: \n");
 	printCoordinateArray(obstacleLocation, num_obstacles);
 
-	GridDecomposition();
-	populateManhattanArray();
-	//convertToMeter();
+	GridBorder();
 
-	printManhattanArray();
+	populateManhattanDist();
+	printManhattanDistArray();
+
+	findRoute(start);
+	printPathway();
 
 	//convertToMeter();
 	printf("program ran successfully \n");
