@@ -12,26 +12,23 @@ gcc doesn't link math.h so you need to compile like this:
 
 */
 
+//Macro
+//---------------------------------------------------------------------------------------------------------
+
 #define METER_CONVERSION 	0.3048
 #define MAX_OBSTACLES   	25		//maximum number of obstacles
 #define GridWidth 			16		//size of the grid x
 #define GridLength 			10		//size of the grid y
 #define INTERSECTIONS 	(GridWidth+1)*(GridLength+1)-120	//how many intersections there are	
 
+//---------------------------------------------------------------------------------------------------------
+
+//Global
+//---------------------------------------------------------------------------------------------------------
+
 int num_obstacles = 4;				//number of obstacles
-
-/*
-double obstacle[MAX_OBSTACLES][2] = 	//obstacle locations
-{{0.61, 2.743},{0.915, 2.743},{1.219, 2.743},{1.829, 1.219},
-{1.829, 1.524},{ 1.829, 1.829}, {1.829, 2.134},{2.743, 0.305},
-{2.743, 0.61},{2.743, 0.915},{2.743, 2.743},{3.048, 2.743},
-{3.353, 2.743},
-{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},
-{-1-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}}; 
-*/
-
-double start[2] = {1, 4};					//start location
-double goal[2] = {12, 6};					//goal location
+double start[2] = {1, 4};			//start location
+double goal[2] = {12, 6};			//goal location
 
 //obstacle locations (their center at x then y coordinate)
 //units are 0.305m per unit 
@@ -43,11 +40,6 @@ double obstacleLocation[MAX_OBSTACLES][2] =
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10}
 };
-
-/*
-double start[2] = {0.305, 1.219};          	//start location
-double goal[2] = {3.658, 1.829};			//goal location
-*/  
 
 //obstacle dimension (width x and length y)
 //the order should match with the order of obstacles in obstacleLocation
@@ -61,6 +53,48 @@ double obstacleDimension[MAX_OBSTACLES][2] =
 	{  0,  0},{  0,  0},{  0,  0},{  0,  0},{  0,  0}
 };	
 
+//make no-pass zones from the perimeter
+double obstacleRange[MAX_OBSTACLES][2][2];
+
+//these corners are a part of the grid decompoistion we don's want to pass
+double obstaclePerimeter[INTERSECTIONS][2];
+
+//---------------------------------------------------------------------------------------------------------
+
+//Printing functions
+//---------------------------------------------------------------------------------------------------------
+
+void printIntArray(int* input){
+	int i = 0;
+	while(input[i] != '\0'){
+		printf("%d \n", input[i]);
+		i++;
+	}
+	putchar('\n');
+}
+
+void printCoordinateArray(double input[][2], int size){
+	int i;
+	for(i = 0; i < size; i++){
+		printf("%f, %f \n", input[i][0], input[i][1]);
+	}
+	putchar('\n');
+}
+
+void print3DArray(double input[][2][2], int size){
+	int i;
+	for(i = 0; i < size; i++){
+		printf("%f, %f, %f, %f  \n", 	input[i][0][0], input[i][0][1],
+										input[i][1][0], input[i][1][1]);
+	}
+	putchar('\n');
+}
+
+//---------------------------------------------------------------------------------------------------------
+
+
+//More functions
+//---------------------------------------------------------------------------------------------------------
 
 // convert the unit (tiles) to meters
 void convertToMeter(){
@@ -87,32 +121,6 @@ void convertToMeter(){
 	
 	//debugger print, should be around 0.305 (METER_CONVERSION)
 	//printf("%f \n", obstacleDimension[1][1]);
-}
-
-void printIntArray(int* input){
-	int i = 0;
-	while(input[i] != '\0'){
-		printf("%d \n", input[i]);
-		i++;
-	}
-	putchar('\n');
-}
-
-void printCoordinateArray(double input[][2], int size){
-	int i;
-	for(i = 0; i < size; i++){
-		printf("%f, %f \n", input[i][0], input[i][1]);
-	}
-	putchar('\n');
-}
-
-void print3DArray(double input[][2][2], int size){
-	int i;
-	for(i = 0; i < size; i++){
-		printf("%f, %f, %f, %f  \n", 	input[i][0][0], input[i][0][1],
-										input[i][1][0], input[i][1][1]);
-	}
-	putchar('\n');
 }
 
 double* pathfinder(double position[2], int* path, int directions[4] ){
@@ -153,13 +161,6 @@ double* pathfinder(double position[2], int* path, int directions[4] ){
 	}
 
 }
-
-//make no-pass zones from the perimeter
-double obstacleRange[MAX_OBSTACLES][2][2];
-
-//these corners are a part of the grid decompoistion we don's want to pass
-double obstaclePerimeter[INTERSECTIONS][2];
-
 
 // make no-pass borders and put the coordinates in obstaclePerimeter
 void GridDecomposition(){
@@ -261,6 +262,10 @@ void GridDecomposition(){
 
 }
 
+
+// Main
+//---------------------------------------------------------------------------------------------------------
+
 int main(void){
 
 	int i;
@@ -280,3 +285,5 @@ int main(void){
 	//convertToMeter();
 	printf("program ran successfully \n");
 }
+
+//---------------------------------------------------------------------------------------------------------
