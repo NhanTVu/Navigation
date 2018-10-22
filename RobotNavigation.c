@@ -185,14 +185,11 @@ void convertToMeter(){
 
 	//debugger print, should be around 2.745 (9*METER_CONVERSION)
 	//printf("%f \n", obstacleLocation[1][1]);
-	
-	//debugger print, should be around 0.305 (METER_CONVERSION)
-	//printf("%f \n", obstacleDimension[1][1]);
 }
 
 
 // make no-pass borders and put the coordinates in obstaclePerimeter
-void GridBorder(){
+void gridBorder(){
 
 	int i, n = 0;
 	double temp, i2;
@@ -220,12 +217,6 @@ void GridBorder(){
 
 		// ^ note that the rounding is to push perimeter to the nearest tile
 	}
-
-	///*
-	//debugger print
-	printf("obstacle range: \n");
-	print3DArray(obstacleRange, num_obstacles);
-	//*/
 
 	//the next 4 for loops makes the border of the map
 	//note that temp is needed to cast i to a double
@@ -323,12 +314,6 @@ void GridBorder(){
 		}
 		
 	}
-
-	///*~
-	//Debugger print
-	printf("obstacle perimeter: \n");
-	printCoordinateArray(obstaclePerimeter, INTERSECTIONS);
-	//*/
 
 }
 
@@ -583,24 +568,13 @@ void executePath(){
 
 int main(void){
 
-	int i;
-
-	//convertToMeter();
-
-	printf("obstacle center location: \n");
-	printCoordinateArray(obstacleLocation, num_obstacles);
-
-	GridBorder();
-
+	gridBorder();
 	populateManhattanDist();
-	printManhattanDistArray();
-
 	findRoute(start);
-
 	executePath();
 
 	//convertToMeter();
-	printf("program ran successfully \n");
+	printf("\nprogram ran successfully \n");
 }
 
 //---------------------------------------------------------------------------------------------------------
