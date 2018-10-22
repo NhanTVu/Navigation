@@ -39,7 +39,7 @@ double goal[2] = {12, 6};	//goal location
 //units are 0.305m per unit 
 double obstacleLocation[MAX_OBSTACLES][2] = 	
 {
-	{  3,  9},{ 10,  9},{ 6, 5.5},{  9,  2},{-10,-10},
+	{  5,  9},{ 10,  9},{ 6, 6.5},{  9,  2},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
 	{-10,-10},{-10,-10},{-10,-10},{-10,-10},{-10,-10},
@@ -571,7 +571,12 @@ int main(void){
 	gridBorder();
 	populateManhattanDist();
 	findRoute(start);
+	
+	printPathway();
+
 	executePath();
+
+
 
 	//convertToMeter();
 	printf("\nprogram ran successfully \n");
